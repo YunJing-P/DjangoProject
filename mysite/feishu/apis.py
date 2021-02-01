@@ -16,7 +16,7 @@ class Api(View):
 
     def post(self, request):
         req = json.loads(request.body)
-
+        print("req", req)
         token = req.get("token", "")
         if token != setting.APP_VERIFICATION_TOKEN:
             print("verification token not match, token =", token)

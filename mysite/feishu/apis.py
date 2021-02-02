@@ -161,12 +161,12 @@ class Api(View):
             temp_list, page = get_chat_info(page)
             GroupInfo.objects.bulk_create([
                 GroupInfo(
-                avatar=temp_list[i]['avatar'],
-                chat_id=temp_list[i]['chat_id'],
-                description=temp_list[i]['description'],
-                name=temp_list[i]['name'],
-                owner_open_id=temp_list[i]['owner_open_id'],
-                owner_user_id=temp_list[i]['owner_user_id'],
+                avatar=i['avatar'],
+                chat_id=i['chat_id'],
+                description=i['description'],
+                name=i['name'],
+                owner_open_id=i['owner_open_id'],
+                owner_user_id=i['owner_user_id'],
                 ) for i in temp_list
             ])
 

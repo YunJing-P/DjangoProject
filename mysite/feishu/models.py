@@ -8,6 +8,7 @@ class Feedback(models.Model):
     is_done = models.IntegerField(default=0)
     c_time = models.DateTimeField(auto_now_add=True)
     m_time = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return self.feedback_text
 
@@ -20,5 +21,7 @@ class GroupInfo(models.Model):
     owner_user_id = models.CharField(max_length=200)
     c_time = models.DateTimeField(auto_now_add=True)
     m_time = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return self.name
+    

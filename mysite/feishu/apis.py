@@ -126,7 +126,6 @@ class Api(View):
             return ""
 
     def update_group_info(self, open_id, chat_type):
-        # is_done = False
         page = ""
         self.update_tenant_access_token_info()
 
@@ -161,14 +160,13 @@ class Api(View):
             GroupInfo.objects.all().delete()
             GroupInfo.objects.bulk_create([
                 GroupInfo(
-                avatar=i['avatar'],
-                chat_id=i['chat_id'],
-                description=i['description'],
-                name=i['name'],
-                owner_open_id=i['owner_open_id'],
-                owner_user_id=i['owner_user_id'],
+                    avatar=i['avatar'],
+                    chat_id=i['chat_id'],
+                    description=i['description'],
+                    name=i['name'],
+                    owner_open_id=i['owner_open_id'],
+                    owner_user_id=i['owner_user_id'],
                 ) for i in temp_list
             ])
 
-        
         self.send_message(open_id, "更新群信息成功", chat_type)

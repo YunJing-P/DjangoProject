@@ -1,5 +1,5 @@
 from django.views.generic.base import View
-from .models import Feedback
+from .models import Feedback, GroupInfo
 from django.http import HttpResponse
 from . import setting
 import json
@@ -128,7 +128,6 @@ class Api(View):
     def update_group_info(self, open_id, chat_type):
         # is_done = False
         page = ""
-        group_dict = {}
         self.update_tenant_access_token_info()
 
         def get_chat_info(page_token="0"):
@@ -157,9 +156,19 @@ class Api(View):
 
             return rsp_body["data"]["groups"], page_token
 
-        temp_dict, page = get_chat_info(page)
-        group_dict += temp_dict
+        temp_list, page = get_chat_info(page)
         while page != "0":
-            temp_dict, page = get_chat_info(page)
-            group_dict += temp_dict
+            temp_list, page = get_chat_info(page)
+            GroupInfo.objects.bulk_create([
+                GroupInfo(
+                avatar=temp_list[i]['avatar'],
+                chat_id=temp_list[i]['chat_id'],
+                description=temp_list[i]['description'],
+                name=temp_list[i]['name'],
+                owner_open_id=temp_list[i]['owner_open_id'],
+                owner_user_id=temp_list[i]['owner_user_id'],
+                ) for i in temp_list
+            ])
+
+        
         self.send_message(open_id, "更新群信息成功", chat_type)

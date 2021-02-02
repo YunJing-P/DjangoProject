@@ -11,8 +11,8 @@ from . import tools
 class Api(View):
     def __init__(self, **kwargs):
         self.access_token = ""
-        self.get_tenant_access_token_info()
         self.token_expire = 0
+        self.update_tenant_access_token_info()
         super(Api, self).__init__(**kwargs)
 
     def post(self, request):

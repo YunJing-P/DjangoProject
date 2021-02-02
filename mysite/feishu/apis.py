@@ -67,20 +67,20 @@ class Api(View):
     
     def handle_event(self, req):
         event = req.get("event", {})
-        event_type = event.get(("type", ""))
+        event_type = event.get("type", "")
 
         if event_type == "":
             return "event_type is empty!"
         
         if event_type == "message":
-            chat_type = event.get(("chat_type", ""))
+            chat_type = event.get("chat_type", "")
 
             if chat_type == "private":
                 text = event.get("text") + "？"
                 self.send_message(event.get("open_id"), text, event.get("chat_type"))
 
             if chat_type == "group":
-                if event.get("text_without_at_bot", "").lower().startswith("bug "):
+                if event.get("text_without_at_bot", "").lower().strip(" ").startswith("bug"):
                     new_feed_back = Feedback(
                         feedback_text=event.get("text_without_at_bot"),
                         chat_id=event.get("employee_id"),

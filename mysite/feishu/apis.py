@@ -158,7 +158,7 @@ class Api(View):
 
         while page != "0":
             temp_list, page = get_chat_info(page)
-            GroupInfo.objects.delete()
+            GroupInfo.objects.all().delete()
             GroupInfo.objects.bulk_create([
                 GroupInfo(
                 avatar=i['avatar'],

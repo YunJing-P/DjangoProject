@@ -5,13 +5,14 @@ from . import setting
 import json
 import requests
 import time
-from django.views.decorators.csrf import csrf_exempt
+from . import tools
+
 
 class Api(View):
     def __init__(self, **kwargs):
         self.access_token = ""
-        self.update_token()
-
+        self.get_tenant_access_token_info()
+        self.token_expire = 0
         super(Api, self).__init__(**kwargs)
 
     def post(self, request):
@@ -34,13 +35,9 @@ class Api(View):
         
         return HttpResponse("type is error!")
 
-    def update_token(self):
-        token_info = self.get_tenant_access_token_info()
-        if token_info != "":
-            self.access_token = json.loads(token_info)['tenant_access_token']
-            self.token_expire = time.time() + json.loads(token_info)['expire'] - 1800
-
-    def get_tenant_access_token_info(self):
+    def update_tenant_access_token_info(self):
+        if self.token_expire > time.time():
+            return
         url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal/"
         headers = {
             "Content-Type" : "application/json"
@@ -55,15 +52,18 @@ class Api(View):
 
         if rsp.status_code != 200 or json.loads(rsp.text)['code'] != 0:
             return ""
-        return rsp.text
+        if rsp.text != "":
+            self.access_token = json.loads(rsp.text)['tenant_access_token']
+            self.token_expire = time.time() + json.loads(rsp.text)['expire'] - 1800
+        return ""
 
     def handle_request_url_verify(self, req):
-        '''
+        """
             飞书验证服务器有效性接口
-        '''
+        """
         challenge = req.get("challenge", "")
         rsp = {'challenge': challenge}
-        return (json.dumps(rsp))
+        return json.dumps(rsp)
     
     def handle_event(self, req):
         event = req.get("event", {})
@@ -80,7 +80,8 @@ class Api(View):
                 self.send_message(event.get("open_id"), text, event.get("chat_type"))
 
             if chat_type == "group":
-                if event.get("text_without_at_bot", "").lower().strip(" ").startswith("bug"):
+                chat_message = event.get("text_without_at_bot", "").lower().strip(" ")
+                if tools.many_start_with(chat_message, ["bug"]):
                     new_feed_back = Feedback(
                         feedback_text=event.get("text_without_at_bot"),
                         chat_id=event.get("employee_id"),
@@ -90,13 +91,16 @@ class Api(View):
                     text = "反馈已经收到！"
                     self.send_message(event.get("open_chat_id"), text, event.get("chat_type"))
                     return "send_message Done!"
+                
+                if tools.many_start_with(chat_message, ["update_group_info", "更新群"]):
+                    self.update_group_info(event.get("open_chat_id"), event.get("chat_type"))
+                    return "update_group_info Done!"
             return "chat_type is empty!"
 
     def send_message(self, back_id, text, chat_type):
         url = "https://open.feishu.cn/open-apis/message/v4/send/"
 
-        if self.token_expire <= time.time():
-            self.update_token()
+        self.update_tenant_access_token_info()
 
         headers = {
             "Content-Type": "application/json",
@@ -120,3 +124,42 @@ class Api(View):
         if rsp.status_code != 200 or rsp_body['code'] != 0:
             print("send message error, code = ", rsp_body['code'], ", msg =", rsp_body.get("msg", ""))
             return ""
+
+    def update_group_info(self, open_id, chat_type):
+        # is_done = False
+        page = ""
+        group_dict = {}
+        self.update_tenant_access_token_info()
+
+        def get_chat_info(page_token="0"):
+            url = "https://open.feishu.cn/open-apis/chat/v4/list"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + self.access_token
+            }
+            req_body = {
+                "page_size": "200"
+            }
+            if page_token != "0":
+                req_body['page_token'] = page_token
+
+            data = bytes(json.dumps(req_body), encoding='utf8')
+            try:
+                rsp = requests.get(url=url, data=data, headers=headers)
+                rsp_body = json.loads(rsp.text)
+                if rsp.status_code != 200 or rsp_body['code'] != 0:
+                    print("get_chat_info error! body: ", rsp_body)
+                    return {}, "0"
+                page_token = rsp_body["data"].get("page_token")
+            except Exception as e:
+                print(e.read().decode())
+                return {}, "0"
+
+            return rsp_body["data"]["groups"], page_token
+
+        temp_dict, page = get_chat_info(page)
+        group_dict += temp_dict
+        while page != "0":
+            temp_dict, page = get_chat_info(page)
+            group_dict += temp_dict
+        self.send_message(open_id, "更新群信息成功", chat_type)

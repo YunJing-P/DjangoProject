@@ -12,6 +12,7 @@ class Feedback(models.Model):
     def __str__(self):
         return self.feedback_text
 
+
 class GroupInfo(models.Model):
     avatar = models.TextField()
     chat_id = models.CharField(max_length=200)
@@ -24,4 +25,3 @@ class GroupInfo(models.Model):
 
     def __str__(self):
         return self.name
-    

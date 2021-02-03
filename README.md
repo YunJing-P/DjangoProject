@@ -1,7 +1,5 @@
 # DjangoProject
 
-***
-
 ## 简介
 
 ***不要上传带密钥的 setting文件***  

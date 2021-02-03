@@ -5,10 +5,11 @@
     <title>feedback</title>
   </head>
   <body>
+    <h1>反馈 List</h1>
     {% if latest_feedback_list %}
         <ul>
         {% for feedback in latest_feedback_list %}
-            {{ feedback }}
+            <li> 反馈内容： {{ feedback }} | 来自群聊： {{ feedback.chat_id }} | 反馈人： {{ feedback.user_id }}</li>
         {% endfor %}
         </ul>
     {% else %}
